@@ -14,28 +14,38 @@
 
   function exerciseRow(ex, sessions) {
     var el = UI.el;
-    var body = el('div', { class: 'ex-body', hidden: 'hidden' });
+    var bodyId = 'ex-body-' + ex.id;
+    var body = el('div', { class: 'ex-body', id: bodyId, hidden: 'hidden' });
     var expanded = false;
+    var videoEl = null;
 
     var toggle = el('button', {
-      class: 'ex-head', type: 'button', 'aria-expanded': 'false',
+      class: 'ex-head', type: 'button', 'aria-expanded': 'false', 'aria-controls': bodyId,
       onclick: function () {
         expanded = !expanded;
         this.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         if (expanded) {
           body.removeAttribute('hidden');
           if (!body.childNodes.length) {
-            body.appendChild(UI.video(ex.videoId));
+            videoEl = UI.video(ex.videoId);
+            body.appendChild(videoEl);
             var meta = [];
             if (ex.tempo) meta.push(el('p', { class: 'ex-note', text: 'Tempo: ' + ex.tempo }));
             if (ex.notes) meta.push(el('p', { class: 'ex-note', text: ex.notes }));
             var line = lastLine(sessions, ex);
             if (line) meta.push(el('p', { class: 'ex-note ex-note--last', text: line }));
-            if (!ex.videoId) meta.push(el('p', { class: 'ex-note', text: 'No video was linked for this exercise.' }));
             meta.forEach(function (m) { body.appendChild(m); });
           }
         } else {
           body.setAttribute('hidden', 'hidden');
+          // Collapsing must kill a playing iframe (audio keeps going otherwise) without
+          // touching the note paragraphs already built, or the build-once guard above
+          // would see an empty body and duplicate them on the next expand.
+          if (videoEl && videoEl.querySelector('iframe')) {
+            var fresh = UI.video(ex.videoId);
+            body.replaceChild(fresh, videoEl);
+            videoEl = fresh;
+          }
         }
       }
     }, [
