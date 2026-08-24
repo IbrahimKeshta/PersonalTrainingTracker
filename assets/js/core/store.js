@@ -17,6 +17,10 @@
     var healthy = true;
     var cache = {};
 
+    function clone(value) {
+      return value ? JSON.parse(JSON.stringify(value)) : value;
+    }
+
     function readRaw(key) {
       try { return backend.getItem(key); } catch (e) { healthy = false; return null; }
     }
@@ -24,7 +28,8 @@
     function writeRaw(key, value) {
       try {
         if (value === null) backend.removeItem(key); else backend.setItem(key, value);
-      } catch (e) { healthy = false; }
+        return true;
+      } catch (e) { healthy = false; return false; }
     }
 
     function read(key, fallback) {
@@ -36,8 +41,10 @@
           value = JSON.parse(raw);
         } catch (e) {
           // Preserve the unreadable blob so the user can recover it by hand.
-          writeRaw(key.replace(PREFIX, PREFIX + 'corrupt.'), raw);
-          writeRaw(key, null);
+          var preservedCorrupt = writeRaw(key.replace(PREFIX, PREFIX + 'corrupt.'), raw);
+          if (preservedCorrupt) {
+            writeRaw(key, null);
+          }
           value = fallback;
         }
       }
@@ -62,7 +69,7 @@
 
     function addProgram(program) {
       var list = programs().slice();
-      list.push(program);
+      list.push(clone(program));
       write(KEYS.programs, list);
       setActiveProgram(program.id);
       return program;
@@ -81,24 +88,25 @@
       var id = settings().activeProgramId;
       var found = null;
       list.forEach(function (p) { if (p.id === id) found = p; });
-      if (found) return found;
-      return list.length ? list[list.length - 1] : null;
+      var result = found || (list.length ? list[list.length - 1] : null);
+      return clone(result);
     }
 
     function saveSession(session) {
       var list = sessions().slice();
       var replaced = false;
+      var cloned = clone(session);
       for (var i = 0; i < list.length; i++) {
-        if (list[i].id === session.id) { list[i] = session; replaced = true; break; }
+        if (list[i].id === cloned.id) { list[i] = cloned; replaced = true; break; }
       }
-      if (!replaced) list.push(session);
+      if (!replaced) list.push(cloned);
       write(KEYS.sessions, list);
       return session;
     }
 
     function getDraft() { return read(KEYS.draft, null); }
 
-    function setDraft(session) { write(KEYS.draft, session); }
+    function setDraft(session) { write(KEYS.draft, clone(session)); }
 
     function clearDraft() {
       cache[KEYS.draft] = null;
@@ -111,21 +119,21 @@
       draft.completedAt = completedAt;
       saveSession(draft);
       clearDraft();
-      return draft;
+      return clone(draft);
     }
 
     function exportAll() {
       return {
         schemaVersion: 1,
         exportedAt: new Date().toISOString(),
-        programs: programs(),
-        sessions: sessions(),
-        settings: settings()
+        programs: clone(programs()),
+        sessions: clone(sessions()),
+        settings: clone(settings())
       };
     }
 
     function importAll(payload) {
-      if (!payload || !Array.isArray(payload.programs) || !Array.isArray(payload.sessions)) {
+      if (!payload || !Array.isArray(payload.programs) || !Array.isArray(payload.sessions) || payload.schemaVersion !== 1) {
         throw new Error('That file is not a valid backup.');
       }
       var existingPrograms = programs().slice();
@@ -159,10 +167,13 @@
     }
 
     return {
-      getPrograms: programs, addProgram: addProgram, deleteProgram: deleteProgram,
+      getPrograms: function() { return clone(programs()); },
+      addProgram: addProgram, deleteProgram: deleteProgram,
       getActiveProgram: getActiveProgram, setActiveProgram: setActiveProgram,
-      getSessions: sessions, saveSession: saveSession,
-      getDraft: getDraft, setDraft: setDraft, clearDraft: clearDraft, finishDraft: finishDraft,
+      getSessions: function() { return clone(sessions()); },
+      saveSession: saveSession,
+      getDraft: function() { return clone(getDraft()); },
+      setDraft: setDraft, clearDraft: clearDraft, finishDraft: finishDraft,
       exportAll: exportAll, importAll: importAll, seedIfEmpty: seedIfEmpty,
       isHealthy: function () { return healthy; },
       KEYS: KEYS
