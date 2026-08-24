@@ -141,7 +141,7 @@
       existingPrograms.forEach(function (p) { programIds[p.id] = true; });
       var addedPrograms = 0;
       payload.programs.forEach(function (p) {
-        if (!programIds[p.id]) { existingPrograms.push(p); programIds[p.id] = true; addedPrograms++; }
+        if (!programIds[p.id]) { existingPrograms.push(clone(p)); programIds[p.id] = true; addedPrograms++; }
       });
 
       var existingSessions = sessions().slice();
@@ -149,7 +149,7 @@
       existingSessions.forEach(function (s) { sessionIds[s.id] = true; });
       var addedSessions = 0;
       payload.sessions.forEach(function (s) {
-        if (!sessionIds[s.id]) { existingSessions.push(s); sessionIds[s.id] = true; addedSessions++; }
+        if (!sessionIds[s.id]) { existingSessions.push(clone(s)); sessionIds[s.id] = true; addedSessions++; }
       });
 
       write(KEYS.programs, existingPrograms);

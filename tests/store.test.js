@@ -242,3 +242,37 @@ test('importAll rejects payload with wrong schemaVersion', () => {
     /not a valid backup/i
   );
 });
+
+test('importAll clones payload objects to prevent caller mutation leaks', () => {
+  const backend = S.memoryBackend();
+  const store = S.create(backend);
+
+  const payloadProgram = { id: 'p1', name: 'Original Program', source: 's.xlsx', importedAt: '2026-01-01T00:00:00.000Z', schemaVersion: 1, exerciseCount: 1, days: [] };
+  const payloadSession = { id: 's1', programId: 'p1', dayId: 'p1-d0', startedAt: '2026-01-02T10:00:00.000Z', completedAt: '2026-01-02T10:00:00.000Z', entries: [] };
+  const payload = { schemaVersion: 1, exportedAt: '2026-01-02T00:00:00.000Z', programs: [payloadProgram], sessions: [payloadSession], settings: {} };
+
+  store.importAll(payload);
+
+  // Mutate the caller's payload objects after import
+  payloadProgram.name = 'ghost-mutated-program';
+  payloadProgram.exerciseCount = 999;
+  payloadSession.entries.push({ mutated: true });
+
+  // Verify the store's copies are unaffected
+  assert.strictEqual(store.getPrograms()[0].name, 'Original Program', 'program name not affected by caller mutation');
+  assert.strictEqual(store.getPrograms()[0].exerciseCount, 1, 'program exerciseCount not affected by caller mutation');
+  assert.strictEqual(store.getSessions()[0].entries.length, 0, 'session entries not affected by caller mutation');
+
+  // Perform an unrelated write to ensure mutations don't persist
+  store.addProgram(makeProgram('p2', 'Phase 2'));
+
+  // Verify the mutations didn't persist through the write
+  assert.strictEqual(store.getPrograms()[0].name, 'Original Program', 'program name still unaffected after unrelated write');
+  assert.strictEqual(store.getSessions()[0].entries.length, 0, 'session entries still unaffected after unrelated write');
+
+  // Verify from a fresh store on the same backend
+  const reloaded = S.create(backend);
+  assert.strictEqual(reloaded.getPrograms()[0].name, 'Original Program', 'program name unaffected in fresh store');
+  assert.strictEqual(reloaded.getPrograms()[0].exerciseCount, 1, 'program exerciseCount unaffected in fresh store');
+  assert.strictEqual(reloaded.getSessions()[0].entries.length, 0, 'session entries unaffected in fresh store');
+});
