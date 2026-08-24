@@ -79,9 +79,11 @@
     var thisWeekKey = weekKey(reference);
     var weekCompleted = done.filter(function (s) { return weekKey(s.completedAt) === thisWeekKey; }).length;
     var last = done[done.length - 1].completedAt;
+    // Use Date.UTC to compute daysSince across DST boundaries: UTC of components is immune to local offset.
+    var lastDate = new Date(last);
     var daysSince = Math.floor(
-      (new Date(reference.getFullYear(), reference.getMonth(), reference.getDate()) -
-       new Date(dayKey(last) + 'T00:00:00')) / DAY_MS
+      (Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate()) -
+       Date.UTC(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate())) / DAY_MS
     );
 
     return {
@@ -144,6 +146,7 @@
         var isTime = doneSets.some(function (set) { return set.seconds !== null && set.seconds !== undefined; });
         var values = doneSets.map(function (set) {
           var v = isTime ? set.seconds : set.reps;
+          // A set with both reps and seconds null contributes 0 and defaults kind to 'reps'.
           return typeof v === 'number' ? v : 0;
         });
         out.push({

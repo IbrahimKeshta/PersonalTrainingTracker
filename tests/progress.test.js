@@ -93,6 +93,20 @@ test('daysSince reflects the most recent completed session', () => {
   assert.strictEqual(s.daysSince, 2);
 });
 
+test('daysSince is accurate across calendar days including DST boundaries', () => {
+  const PROGRAM_STUB = { days: [] };
+  // 0 days: session same day as now
+  const today = G.dayKey(new Date('2026-08-26T12:00:00'));
+  const s0 = G.summary([session('a', 'd0', today + 'T10:00:00')], PROGRAM_STUB, new Date('2026-08-26T12:00:00'));
+  assert.strictEqual(s0.daysSince, 0);
+  // 1 day: session yesterday
+  const s1 = G.summary([session('a', 'd0', '2026-08-25T10:00:00')], PROGRAM_STUB, new Date('2026-08-26T12:00:00'));
+  assert.strictEqual(s1.daysSince, 1);
+  // 3 days: session three days ago
+  const s3 = G.summary([session('a', 'd0', '2026-08-23T10:00:00')], PROGRAM_STUB, new Date('2026-08-26T12:00:00'));
+  assert.strictEqual(s3.daysSince, 3);
+});
+
 test('heatmap returns one bucket per day, oldest first', () => {
   const sessions = [
     session('a', 'd0', '2026-08-24T10:00:00'),
@@ -146,6 +160,18 @@ test('exerciseHistory ignores sets that were not done', () => {
   assert.strictEqual(h[0].kind, 'reps');
 });
 
+test('exerciseHistory handles a set with both reps and seconds null as 0 contribution', () => {
+  // A set with both values null defaults to kind 'reps' and contributes 0.
+  const entry = { exerciseId: 'e', slug: 'mystery', name: 'mystery',
+    sets: [{ index: 0, done: true, reps: null, seconds: null, note: '' }] };
+  const h = G.exerciseHistory([session('a', 'd0', '2026-08-24T10:00:00', [entry])], 'mystery');
+  assert.strictEqual(h.length, 1);
+  assert.strictEqual(h[0].kind, 'reps');
+  assert.strictEqual(h[0].best, 0);
+  assert.strictEqual(h[0].total, 0);
+  assert.strictEqual(h[0].sets, 1);
+});
+
 test('exerciseHistory for an unknown slug is empty', () => {
   assert.deepStrictEqual(G.exerciseHistory([], 'nope'), []);
 });
@@ -166,4 +192,22 @@ test('estimateSeconds sums work and rest across a day', () => {
   const seconds = G.estimateSeconds(PROGRAM.days[0]);
   assert.strictEqual(seconds, 4 * (36 + 30) + 4 * 30);
   assert.strictEqual(G.estimateSeconds(PROGRAM.days[1]), 0);
+});
+
+test('estimateSeconds doubles work and rest for per-side exercises', () => {
+  const dayPerSide = {
+    blocks: [
+      {
+        id: 'b0', name: 'Per-side circuit', sets: 2, restSeconds: 20,
+        exercises: [
+          { id: 'e0', slug: 'split-squat', name: 'Split Squat', sets: 2, target: { kind: 'reps', value: 10, perSide: true } },
+          { id: 'e1', slug: 'single-arm-hold', name: 'Single Arm Hold', sets: 2, target: { kind: 'time', value: 15, perSide: true } }
+        ]
+      }
+    ]
+  };
+  // Per set: (10 reps x 3s x 2 sides) + (15s x 2 sides) = 60 + 30 = 90s
+  // 2 sets: (2 x 90) + (2 x 20 rest) = 180 + 40 = 220s
+  const seconds = G.estimateSeconds(dayPerSide);
+  assert.strictEqual(seconds, 220);
 });
