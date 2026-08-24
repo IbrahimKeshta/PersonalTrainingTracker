@@ -4,9 +4,10 @@
     if (!ws || !ws['!ref']) return [];
     var range = XLSX.utils.decode_range(ws['!ref']);
     var grid = [];
-    for (var r = range.s.r; r <= range.e.r; r++) {
+    // Always start from A1 (0,0) to ensure grid coordinates are absolute column/row positions
+    for (var r = 0; r <= range.e.r; r++) {
       var row = [];
-      for (var c = range.s.c; c <= range.e.c; c++) {
+      for (var c = 0; c <= range.e.c; c++) {
         var addr = XLSX.utils.encode_cell({ r: r, c: c });
         var cell = ws[addr];
         var value = '';

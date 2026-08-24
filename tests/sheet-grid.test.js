@@ -50,3 +50,39 @@ test('empty cells are normalized, not missing', () => {
   assert.strictEqual(grid[3][0].link, null);
   assert.strictEqual(grid[14][2].v, '');  // C15 blank spacer row
 });
+
+test('grid always starts at A1 regardless of used range origin', () => {
+  const XLSX = require('../assets/js/vendor/xlsx.full.min.js');
+  // Construct a worksheet whose !ref starts at C2 (not A1)
+  // This simulates a user uploading a sheet with leading empty rows/columns
+  const ws = {
+    '!ref': 'C2:D3',
+    'C2': { v: 'hello', w: 'hello' },
+    'D3': { v: 42, w: '42' }
+  };
+  const grid = SG.fromWorksheet(XLSX, ws);
+
+  // Grid must start at A1 (row 0, col 0), padding with empty cells
+  assert.strictEqual(grid.length, 3, 'expected 3 rows (A1:D3)');
+  assert.strictEqual(grid[0].length, 4, 'expected 4 columns (A-D)');
+
+  // A1:B1 and A2:B2 should be empty
+  assert.strictEqual(grid[0][0].v, '');
+  assert.strictEqual(grid[0][0].link, null);
+  assert.strictEqual(grid[1][0].v, '');
+  assert.strictEqual(grid[1][0].link, null);
+
+  // C2 should contain 'hello'
+  assert.strictEqual(grid[1][2].v, 'hello');
+  assert.strictEqual(grid[1][2].link, null);
+
+  // D3 should contain '42'
+  assert.strictEqual(grid[2][3].v, '42');
+  assert.strictEqual(grid[2][3].link, null);
+
+  // The rest should be empty
+  assert.strictEqual(grid[0][2].v, '');
+  assert.strictEqual(grid[2][0].v, '');
+  assert.strictEqual(grid[2][1].v, '');
+  assert.strictEqual(grid[2][2].v, '');
+});
