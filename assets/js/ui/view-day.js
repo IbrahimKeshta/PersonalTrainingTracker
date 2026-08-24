@@ -1,10 +1,94 @@
 'use strict';
 (function (root) {
-  root.PTT = root.PTT || {};
-  root.PTT.views = root.PTT.views || {};
-  root.PTT.views.day = {
-    render: function () {
-      return root.PTT.ui.el('p', { class: 'empty', text: 'Not built yet.' });
+  var UI = root.PTT.ui;
+  var G = root.PTT.progress;
+
+  function lastLine(sessions, ex) {
+    var last = G.lastPerformance(sessions, ex.slug);
+    if (!last) return null;
+    var values = last.sets.map(function (s) {
+      return s.seconds !== null && s.seconds !== undefined ? s.seconds + 's' : String(s.reps);
+    });
+    return 'Last time (' + last.date + '): ' + values.join(' · ');
+  }
+
+  function exerciseRow(ex, sessions) {
+    var el = UI.el;
+    var body = el('div', { class: 'ex-body', hidden: 'hidden' });
+    var expanded = false;
+
+    var toggle = el('button', {
+      class: 'ex-head', type: 'button', 'aria-expanded': 'false',
+      onclick: function () {
+        expanded = !expanded;
+        this.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (expanded) {
+          body.removeAttribute('hidden');
+          if (!body.childNodes.length) {
+            body.appendChild(UI.video(ex.videoId));
+            var meta = [];
+            if (ex.tempo) meta.push(el('p', { class: 'ex-note', text: 'Tempo: ' + ex.tempo }));
+            if (ex.notes) meta.push(el('p', { class: 'ex-note', text: ex.notes }));
+            var line = lastLine(sessions, ex);
+            if (line) meta.push(el('p', { class: 'ex-note ex-note--last', text: line }));
+            if (!ex.videoId) meta.push(el('p', { class: 'ex-note', text: 'No video was linked for this exercise.' }));
+            meta.forEach(function (m) { body.appendChild(m); });
+          }
+        } else {
+          body.setAttribute('hidden', 'hidden');
+        }
+      }
+    }, [
+      ex.videoId
+        ? el('img', { class: 'ex-thumb', src: root.PTT.normalize.thumbUrl(ex.videoId), alt: '', loading: 'lazy' })
+        : el('span', { class: 'ex-thumb ex-thumb--empty', text: '—' }),
+      el('span', { class: 'ex-text' }, [
+        el('span', { class: 'ex-name', text: ex.name }),
+        el('span', { class: 'ex-target', text: ex.sets + ' × ' + UI.fmtTarget(ex.target) })
+      ]),
+      el('span', { class: 'ex-chevron', text: '⌄' })
+    ]);
+
+    return el('li', { class: 'ex' }, [toggle, body]);
+  }
+
+  function render(ctx) {
+    var el = UI.el;
+    if (!ctx.day) {
+      return el('div', { class: 'view' }, [
+        el('h1', { text: 'Day not found' }),
+        el('a', { class: 'btn', href: '#/week', text: 'Back to the week' })
+      ]);
     }
-  };
+
+    var day = ctx.day;
+    var total = day.blocks.reduce(function (n, b) { return n + b.exercises.length; }, 0);
+
+    return el('div', { class: 'view' }, [
+      el('header', { class: 'view-head' }, [
+        el('a', { class: 'backlink', href: '#/week', text: '‹ Week' }),
+        el('h1', { text: day.name }),
+        el('p', { class: 'day-card-meta',
+                  text: total + ' exercises · ~' + UI.fmtDuration(G.estimateSeconds(day)) })
+      ]),
+
+      el('div', { class: 'blocks' }, day.blocks.map(function (block) {
+        return el('section', { class: 'block' }, [
+          el('header', { class: 'block-head' }, [
+            el('h2', { text: block.name }),
+            el('span', { class: 'pill',
+                         text: block.sets + ' sets' + (block.restSeconds ? ' · ' + block.restSeconds + 's rest' : '') })
+          ]),
+          el('ul', { class: 'ex-list' }, block.exercises.map(function (ex) {
+            return exerciseRow(ex, ctx.sessions);
+          }))
+        ]);
+      })),
+
+      el('a', { class: 'btn btn--primary btn--block', href: '#/session/' + day.id, text: 'Start workout' })
+    ]);
+  }
+
+  root.PTT.views = root.PTT.views || {};
+  root.PTT.views.day = { render: render };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

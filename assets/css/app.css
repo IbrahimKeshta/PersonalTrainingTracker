@@ -114,3 +114,24 @@ h3 { font-size: 17px; margin: 0; }
 
 .section { display: flex; flex-direction: column; gap: 12px; }
 .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+
+/* day screen */
+.backlink { color: var(--muted); text-decoration: none; font-size: 14px; }
+.blocks { display: flex; flex-direction: column; gap: 22px; }
+.block-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.ex-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ex { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.ex-head {
+  all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 10px 12px; cursor: pointer; min-height: 64px;
+}
+.ex-thumb { width: 72px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--surface-2); flex: none; }
+.ex-thumb--empty { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; }
+.ex-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ex-name { font-weight: 600; }
+.ex-target { font-size: 13px; color: var(--muted); }
+.ex-chevron { color: var(--muted); transition: transform 0.15s ease; }
+.ex-head[aria-expanded="true"] .ex-chevron { transform: rotate(180deg); }
+.ex-body { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.ex-note { margin: 0; font-size: 13px; color: var(--muted); }
+.ex-note--last { color: var(--accent); }
