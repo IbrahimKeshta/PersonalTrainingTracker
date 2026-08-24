@@ -72,8 +72,35 @@
     var steps = buildSteps(day);
 
     var draft = store.getDraft();
-    if (!draft || draft.dayId !== day.id) {
-      if (draft && draft.dayId !== day.id) store.clearDraft();
+    // A paused draft for a different day is not junk to be swept away the
+    // instant someone taps Start on another card -- Pause is now the normal,
+    // encouraged way to leave a workout, so this path is easy to hit by
+    // accident from the Week screen (both day cards sit right there). Ask
+    // before destroying it, name what is at stake, and send a Cancel straight
+    // to the paused workout rather than leaving the user stranded on a half
+    // -built view for the day they did not actually choose.
+    if (draft && draft.dayId !== day.id) {
+      var pausedDay = root.PTT.app ? root.PTT.app.findDay(ctx.program, draft.dayId) : null;
+      var pausedCount = 0;
+      draft.entries.forEach(function (e) {
+        pausedCount += e.sets.filter(function (s) { return s.done; }).length;
+      });
+      var pausedSetsPhrase = pausedCount + ' set' + (pausedCount === 1 ? '' : 's') + ' logged';
+      var conflictWarning = (pausedDay
+        ? 'You have a paused workout for ' + pausedDay.name + ' (' + pausedSetsPhrase + ').'
+        : 'You have a paused workout (' + pausedSetsPhrase + ').') +
+        ' Starting ' + day.name + ' will discard it. Continue?';
+      if (!window.confirm(conflictWarning)) {
+        window.location.hash = '#/session/' + draft.dayId;
+        return el('div', { class: 'view' }, [
+          el('p', { class: 'empty', text: 'Returning to your paused workout…' }),
+          el('a', { class: 'btn btn--primary', href: '#/session/' + draft.dayId, text: 'Resume' })
+        ]);
+      }
+      store.clearDraft();
+      draft = null;
+    }
+    if (!draft) {
       draft = blankDraft(ctx.program, day);
       store.setDraft(draft);
     }
