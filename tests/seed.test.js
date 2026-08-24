@@ -32,12 +32,11 @@ test('seed id is stable, not time-based', () => {
 test('seed attaches to a PTT global when evaluated as a browser script', () => {
   const src = fs.readFileSync(SEED_PATH, 'utf8');
   const fakeGlobal = { PTT: {} };
-  // Replace the IIFE invocation to pass globalThis as a parameter
-  const modified = src.replace(
-    /}\)\(typeof globalThis[^)]*\)\s*;?\s*$/m,
-    '})(globalThis);'
-  );
-  const fn = new Function('globalThis', modified);
+  // The 'globalThis' parameter shadows the global identifier within the function,
+  // so the seed's footer already resolves its typeof check to the fake object.
+  // This evaluates the source outside Node's CommonJS wrapper, validating it works
+  // as a browser script where module/exports are absent.
+  const fn = new Function('globalThis', src);
   fn(fakeGlobal);
   assert.ok(fakeGlobal.PTT.seed, 'PTT.seed should be assigned');
   assert.strictEqual(fakeGlobal.PTT.seed.days.length, 3);
