@@ -135,3 +135,36 @@ h3 { font-size: 17px; margin: 0; }
 .ex-body { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
 .ex-note { margin: 0; font-size: 13px; color: var(--muted); }
 .ex-note--last { color: var(--accent); }
+
+/* session screen */
+.view--session { gap: 14px; }
+.session { display: flex; flex-direction: column; gap: 14px; }
+.session-head { display: flex; align-items: center; justify-content: space-between; }
+.session-count { color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+.session-title { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+.session-target { margin: 0; color: var(--muted); font-size: 14px; }
+.progressbar { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.progressbar-fill { height: 100%; background: var(--accent); transition: width 0.2s ease; }
+
+.set-dots { display: flex; gap: 8px; }
+.set-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); }
+.set-dot.is-done { background: var(--accent); border-color: transparent; }
+.set-dot.is-current { box-shadow: 0 0 0 3px rgba(78, 201, 165, 0.25); }
+
+.timer { display: flex; flex-direction: column; align-items: center; gap: 8px;
+         background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+.timer-value { font-size: 52px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+.timer-label { margin: 0; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.stepper { display: flex; align-items: center; justify-content: center; gap: 20px;
+           background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.stepper-btn { min-width: 56px; font-size: 24px; }
+.stepper-value { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 110px; text-align: center; }
+
+.note-input {
+  width: 100%; min-height: 48px; padding: 0 14px; border-radius: var(--radius);
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 15px;
+}
+.session-actions { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 10px; }
+.session-rest, .session-finish { display: flex; flex-direction: column; gap: 16px; align-items: stretch; text-align: center; }
+.rest-next { margin: 0; color: var(--muted); }
