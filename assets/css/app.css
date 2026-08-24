@@ -168,3 +168,4 @@ h3 { font-size: 17px; margin: 0; }
 .session-actions { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 10px; }
 .session-rest, .session-finish { display: flex; flex-direction: column; gap: 16px; align-items: stretch; text-align: center; }
 .rest-next { margin: 0; color: var(--muted); }
+.session-danger { margin-top: 10px; }

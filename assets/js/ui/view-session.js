@@ -10,7 +10,6 @@
         block.exercises.forEach(function (ex, i) {
           steps.push({
             block: block, exercise: ex, setIndex: s, totalSets: sets,
-            isRoundEnd: i === block.exercises.length - 1,
             restAfter: (i === block.exercises.length - 1 && s < sets - 1) ? (block.restSeconds || 0) : 0
           });
         });
@@ -87,6 +86,17 @@
       if (timer) { clearInterval(timer); timer = null; }
     }
 
+    // The tab bar lives outside the router's mount and stays tappable during a
+    // session, and back/forward and hand-edited hashes all bypass this view's
+    // own buttons too. Any of those fires 'hashchange' without ever calling our
+    // click handlers, so a running countdown would otherwise keep ticking
+    // against a detached view and eventually overwrite the draft with a stale
+    // snapshot. Catch every way out of this screen at the one place they all
+    // funnel through. The view instance (and this closure) is discarded on
+    // navigation regardless of outcome, so the listener never needs removing by
+    // hand — {once:true} just keeps it from piling up across repeat visits.
+    window.addEventListener('hashchange', stopTimer, { once: true });
+
     function persist() { store.setDraft(draft); }
 
     function goTo(i) {
@@ -118,7 +128,27 @@
       window.location.hash = '#/week';
     }
 
-    function abandon() {
+    // Leaves the in-progress session on disk — this is what makes the Week
+    // screen's "workout in progress, tap to resume" banner meaningful. A
+    // destructive default here (silently deleting every set logged so far on
+    // a single mistap, one-handed, mid-workout) is exactly the failure this
+    // screen exists to prevent.
+    function pause() {
+      stopTimer();
+      window.location.hash = '#/day/' + day.id;
+    }
+
+    // The only way to actually delete a draft: named, confirmed, and kept away
+    // from the primary Done control so a mis-tap can't reach it.
+    function discard() {
+      var doneCount = 0;
+      draft.entries.forEach(function (e) {
+        doneCount += e.sets.filter(function (s) { return s.done; }).length;
+      });
+      var warning = doneCount > 0
+        ? 'Discard this workout? ' + doneCount + ' logged set' + (doneCount === 1 ? '' : 's') + ' will be lost.'
+        : 'Discard this workout?';
+      if (!window.confirm(warning)) return;
       stopTimer();
       store.clearDraft();
       window.location.hash = '#/day/' + day.id;
@@ -233,7 +263,7 @@
           // Two-phase countdown: run the hold once per side, back to back, then
           // complete the set with the combined time. Phase 2 starts on its own —
           // the vibration + "Done" flash at the end of phase 1 is the cue to switch.
-          control = el('div', { class: 'timer-phase' });
+          control = el('div', {});
           var renderPhase = function (phase) {
             UI.clear(control);
             var cd = countdown(ex.target.value, 'Hold — side ' + phase + ' of 2', function () {
@@ -268,7 +298,7 @@
 
       container.appendChild(el('div', { class: 'session' }, [
         el('header', { class: 'session-head' }, [
-          el('button', { class: 'backlink', type: 'button', text: '‹ Exit', onclick: abandon }),
+          el('button', { class: 'backlink', type: 'button', text: '‹ Pause', onclick: pause }),
           el('span', { class: 'session-count', text: (index + 1) + ' / ' + steps.length })
         ]),
         el('div', { class: 'progressbar' }, [
@@ -307,6 +337,11 @@
                            stopTimer();
                            if (index >= steps.length - 1) drawFinish(); else goTo(index + 1);
                          } })
+        ]),
+
+        el('div', { class: 'session-danger' }, [
+          el('button', { class: 'btn btn--ghost btn--danger btn--block', type: 'button',
+                         text: 'Discard workout', onclick: discard })
         ])
       ]));
     }
