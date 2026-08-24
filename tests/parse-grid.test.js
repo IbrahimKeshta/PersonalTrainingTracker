@@ -39,6 +39,15 @@ test('rest inherits per block and only where the sheet sets it', () => {
   assert.strictEqual(d1.blocks[3].restSeconds, 30);     // Circuit 2
 });
 
+test('Core blocks in days 2 and 3 also carry 30s rest', () => {
+  const d2Core = program.days[1].blocks.find((b) => b.name === 'Core');
+  const d3Core = program.days[2].blocks.find((b) => b.name === 'Core');
+  assert.ok(d2Core, 'expected a Core block on day 2');
+  assert.ok(d3Core, 'expected a Core block on day 3');
+  assert.strictEqual(d2Core.restSeconds, 30);   // sheet cell: "30 SEC "
+  assert.strictEqual(d3Core.restSeconds, 30);   // sheet cell: "30 sec "
+});
+
 test('reps/duration inherits down within a block', () => {
   const warmup = program.days[0].blocks[0];
   assert.strictEqual(warmup.exercises[0].name, 'Step Jacks');
@@ -106,4 +115,35 @@ test('exercises before any block land in a Main block', () => {
 test('exerciseCount and dayCount are precomputed on the program', () => {
   assert.strictEqual(program.exerciseCount, 38);
   assert.strictEqual(program.days.length, 3);
+});
+
+test('a block with no sets value defaults to 1', () => {
+  const cell = (v, link) => ({ v: v, link: link || null });
+  const grid = [
+    [cell('Workout'), cell(''), cell('Exercise'), cell('Sets'), cell('Reps / Duration'), cell('Tempo'), cell('Rest')],
+    [cell('DAY 10'), cell('CIRCUIT'), cell('BURPEES'), cell(''), cell('10'), cell(''), cell('')]
+  ];
+  const p = P.gridToProgram(grid, META);
+  assert.strictEqual(p.days[0].blocks[0].sets, 1);
+});
+
+test('a block with a non-numeric sets value defaults to 1', () => {
+  const cell = (v, link) => ({ v: v, link: link || null });
+  const grid = [
+    [cell('Workout'), cell(''), cell('Exercise'), cell('Sets'), cell('Reps / Duration'), cell('Tempo'), cell('Rest')],
+    [cell('DAY 11'), cell('CIRCUIT'), cell('BURPEES'), cell('x'), cell('10'), cell(''), cell('')]
+  ];
+  const p = P.gridToProgram(grid, META);
+  assert.strictEqual(p.days[0].blocks[0].sets, 1);
+});
+
+test('a header row with zero exercise rows under it yields null', () => {
+  const cell = (v, link) => ({ v: v, link: link || null });
+  const blank = () => [cell(''), cell(''), cell(''), cell(''), cell(''), cell(''), cell('')];
+  const grid = [
+    [cell('Workout'), cell(''), cell('Exercise'), cell('Sets'), cell('Reps / Duration'), cell('Tempo'), cell('Rest')],
+    blank(),
+    blank()
+  ];
+  assert.strictEqual(P.gridToProgram(grid, META), null);
 });
