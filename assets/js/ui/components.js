@@ -60,6 +60,19 @@
       class: 'video-thumb', type: 'button', 'aria-label': 'Play video',
       onclick: function () {
         clear(wrap);
+        // YouTube's player requires an HTTP referer header to allow embedding.
+        // Pages opened as file:// send no referer at all, so the iframe always
+        // fails there (YouTube error 153) regardless of the video. Link out to
+        // a real playback instead of showing a broken embedded player.
+        if (typeof location !== 'undefined' && location.protocol === 'file:') {
+          wrap.appendChild(el('div', { class: 'video-missing' }, [
+            el('a', {
+              href: 'https://www.youtube.com/watch?v=' + videoId,
+              target: '_blank', rel: 'noopener', text: 'Watch on YouTube ↗'
+            })
+          ]));
+          return;
+        }
         wrap.appendChild(el('iframe', {
           src: N.embedUrl(videoId) + (opts.autoplay ? '&autoplay=1' : ''),
           allow: 'accelerometer; autoplay; encrypted-media; picture-in-picture',
