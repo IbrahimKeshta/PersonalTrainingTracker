@@ -16,6 +16,7 @@
   function create(backend) {
     var healthy = true;
     var cache = {};
+    var corruptKeys = [];
 
     function clone(value) {
       return value ? JSON.parse(JSON.stringify(value)) : value;
@@ -45,6 +46,7 @@
           if (preservedCorrupt) {
             writeRaw(key, null);
           }
+          if (corruptKeys.indexOf(key) === -1) corruptKeys.push(key);
           value = fallback;
         }
       }
@@ -176,6 +178,7 @@
       setDraft: setDraft, clearDraft: clearDraft, finishDraft: finishDraft,
       exportAll: exportAll, importAll: importAll, seedIfEmpty: seedIfEmpty,
       isHealthy: function () { return healthy; },
+      getCorruptKeys: function () { return corruptKeys.slice(); },
       KEYS: KEYS
     };
   }

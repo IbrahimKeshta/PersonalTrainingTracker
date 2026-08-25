@@ -19,9 +19,26 @@
 
     if (PTT.seed) store.seedIfEmpty(PTT.seed);
 
+    // Touch every persisted key up front so a corrupt blob under any of them
+    // (not just programs, which seedIfEmpty already reads) is discovered
+    // before we decide whether to show the corrupt-data banner below.
+    store.getSessions();
+    store.getDraft();
+    store.getActiveProgram();
+
     if (!store.isHealthy()) {
       document.body.insertBefore(
         PTT.ui.banner('Browser storage is unavailable — progress will not be saved after you close this page.', 'warn'),
+        document.body.firstChild
+      );
+    }
+
+    if (store.getCorruptKeys().length) {
+      document.body.insertBefore(
+        PTT.ui.banner('Some saved data could not be read and has been preserved (not deleted) under a backup key on ' +
+          'this device. If you have an exported backup, go to Plans → Restore backup to bring your programs and ' +
+          'sessions back. If you do not, the original data is still on this device — a developer/support contact ' +
+          'can help recover it manually.', 'warn'),
         document.body.firstChild
       );
     }

@@ -10,7 +10,6 @@
       if (value === null || value === undefined || value === false) return;
       if (key === 'class') node.className = value;
       else if (key === 'text') node.textContent = value;
-      else if (key === 'html') node.innerHTML = value;
       else if (key.indexOf('on') === 0 && typeof value === 'function') {
         node.addEventListener(key.slice(2).toLowerCase(), value);
       } else node.setAttribute(key, value);

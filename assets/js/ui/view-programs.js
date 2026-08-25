@@ -92,7 +92,6 @@
           previews.appendChild(previewCard(program, function (p) {
             store.addProgram(p);
             window.location.hash = '#/week';
-            root.PTT.app.reload();
           }));
         });
       };
@@ -152,6 +151,7 @@
     });
 
     var activeId = ctx.program ? ctx.program.id : null;
+    var programs = store.getPrograms();
 
     return el('div', { class: 'view' }, [
       el('header', { class: 'view-head' }, [el('h1', { text: 'Plans' })]),
@@ -162,9 +162,9 @@
       previews,
 
       UI.section('Your plans', [
-        el('div', { class: 'cards' }, (store.getPrograms().length
-          ? store.getPrograms().slice().reverse().map(function (p) {
-              var used = store.getSessions().filter(function (s) { return s.programId === p.id; }).length;
+        el('div', { class: 'cards' }, (programs.length
+          ? programs.slice().reverse().map(function (p) {
+              var used = ctx.sessions.filter(function (s) { return s.programId === p.id; }).length;
               return el('article', { class: 'card program' + (p.id === activeId ? ' is-active' : '') }, [
                 el('div', { class: 'program-main' }, [
                   el('h3', { text: p.name }),

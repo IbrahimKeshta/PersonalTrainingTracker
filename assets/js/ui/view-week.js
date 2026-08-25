@@ -43,6 +43,7 @@
     var summary = G.summary(ctx.sessions, program, new Date());
     var completion = G.dayCompletion(ctx.sessions, program);
     var draft = ctx.store.getDraft();
+    var draftDay = draft && root.PTT.app ? root.PTT.app.findDay(program, draft.dayId) : null;
     var cells = G.heatmap(ctx.sessions, 7, new Date());
 
     return el('div', { class: 'view' }, [
@@ -76,13 +77,25 @@
         ]);
       })),
 
-      draft ? el('a', { class: 'banner banner--warn banner--link',
+      draft
+        ? (draftDay
+            ? el('a', { class: 'banner banner--warn banner--link',
                         href: '#/session/' + draft.dayId,
-                        text: 'You have a workout in progress — tap to resume' }) : null,
+                        text: 'You have a workout in progress — tap to resume' })
+            : el('div', { class: 'banner banner--warn' }, [
+                el('p', { text: 'You have a paused workout from a different plan. It will not appear here until you switch back to that plan.' }),
+                el('button', { class: 'btn btn--ghost btn--danger', type: 'button', text: 'Discard paused workout',
+                  onclick: function () {
+                    if (!window.confirm('Discard the paused workout from the other plan? Its logged sets will be lost.')) return;
+                    ctx.store.clearDraft();
+                    root.PTT.app.reload();
+                  } })
+              ]))
+        : null,
 
       el('div', { class: 'cards' }, program.days.map(function (day) {
         return dayCard(day, completion[day.id] || { count: 0, lastAt: null },
-                       !!draft && draft.dayId === day.id);
+                       !!draftDay && draft.dayId === day.id);
       }))
     ]);
   }

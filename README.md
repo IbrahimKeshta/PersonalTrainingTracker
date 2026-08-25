@@ -83,6 +83,4 @@ are **classic scripts**, never ES modules (browsers block `import` on `file://`)
 and local data ships as `.js`, never `.json` (`fetch` is blocked on `file://`).
 Both are guarded by grep checks (`^\s*(import|export)\s` and `fetch(|XMLHttpRequest`
 over `assets/js/core`, `assets/js/ui`, `assets/js/app.js`, `data/seed-program.js`)
-and were re-verified on a literal `file://` load, not just an HTTP substitute —
-see `.superpowers/sdd/2026-08-24-personal-training-tracker/task-12-report.md`
-for the full verification record, including the video-embedding caveat above.
+and were re-verified on a literal `file://` load, not just an HTTP substitute.

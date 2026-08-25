@@ -139,6 +139,34 @@ test('corrupt stored data recovers instead of throwing', () => {
   assert.strictEqual(backend.getItem('ptt.v1.corrupt.programs'), '{not json');
 });
 
+test('getCorruptKeys reports keys found corrupt during this store instance', () => {
+  const backend = S.memoryBackend();
+  backend.setItem('ptt.v1.programs', '{not valid json');
+  const store = S.create(backend);
+  assert.deepStrictEqual(store.getPrograms(), []);
+  assert.deepStrictEqual(store.getCorruptKeys(), ['ptt.v1.programs']);
+});
+
+test('getCorruptKeys is empty when nothing is corrupt', () => {
+  const store = S.create(S.memoryBackend());
+  store.addProgram(makeProgram('p1', 'Phase 1'));
+  assert.deepStrictEqual(store.getCorruptKeys(), []);
+});
+
+test('getCorruptKeys accumulates distinct corrupt keys across reads without duplicates', () => {
+  const backend = S.memoryBackend();
+  backend.setItem('ptt.v1.programs', '{not valid json');
+  backend.setItem('ptt.v1.sessions', 'also not json');
+  const store = S.create(backend);
+  store.getPrograms();
+  store.getPrograms(); // read again; should not duplicate the key
+  store.getSessions();
+  const keys = store.getCorruptKeys();
+  assert.strictEqual(keys.length, 2);
+  assert.ok(keys.indexOf('ptt.v1.programs') !== -1);
+  assert.ok(keys.indexOf('ptt.v1.sessions') !== -1);
+});
+
 test('a failing backend degrades to in-memory and reports unhealthy', () => {
   const failing = {
     getItem: () => null,

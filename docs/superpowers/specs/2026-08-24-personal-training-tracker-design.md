@@ -38,7 +38,7 @@ table starts with a header row containing `Exercise` in column C.
 | B | Block name (`WARM UP`, `MOBILITY`, `CORE`, `CIRCUIT 1`, `CIRCUIT 2`) | inherited down until the next non-empty B |
 | C | Exercise name — carries the video as a cell hyperlink | the row |
 | D | Sets | inherited down within the block |
-| E | Reps / Duration | the row |
+| E | Reps / Duration | inherited down within the block until the next non-empty value |
 | F | Tempo | the row (unused in the source file) |
 | G | Rest | inherited down within the block |
 | H–L | Per-set logging columns `1`–`5` | ignored on import; the app logs these |
@@ -159,7 +159,8 @@ localStorage under a single versioned root:
 
 - `ptt.v1.programs` — array of `Program`
 - `ptt.v1.sessions` — array of `Session`
-- `ptt.v1.settings` — `{ activeProgramId, theme }`
+- `ptt.v1.settings` — `{ activeProgramId }` (`theme` was never implemented —
+  the app is dark-theme-only by design, per §3, so no `theme` setting exists)
 - `ptt.v1.draft` — the in-flight session, written on every set so a mid-workout
   reload or app switch loses nothing
 
