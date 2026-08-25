@@ -40,8 +40,10 @@
           body.setAttribute('hidden', 'hidden');
           // Collapsing must kill a playing iframe (audio keeps going otherwise) without
           // touching the note paragraphs already built, or the build-once guard above
-          // would see an empty body and duplicate them on the next expand.
-          if (videoEl && videoEl.querySelector('iframe')) {
+          // would see an empty body and duplicate them on the next expand. The facade
+          // has been "opened" once its play button (.video-thumb) is gone — true for
+          // both the real iframe and the file:// "Watch on YouTube" fallback link.
+          if (ex.videoId && videoEl && !videoEl.querySelector('.video-thumb')) {
             var fresh = UI.video(ex.videoId);
             body.replaceChild(fresh, videoEl);
             videoEl = fresh;

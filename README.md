@@ -1,8 +1,8 @@
 # Training Tracker
 
 A phone-first web app for the home workout plan from my trainer. Every exercise
-plays its video inline, workouts are guided with timers, and progress is tracked
-across uploaded programs.
+has its video one tap away (inline once hosted — see the caveat below), workouts
+are guided with timers, and progress is tracked across uploaded programs.
 
 ## Running it
 
