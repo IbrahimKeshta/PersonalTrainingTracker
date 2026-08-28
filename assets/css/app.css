@@ -134,6 +134,7 @@ h3 { font-size: 17px; margin: 0; }
 .ex-chevron { color: var(--muted); transition: transform 0.15s ease; }
 .ex-head[aria-expanded="true"] .ex-chevron { transform: rotate(180deg); }
 .ex-body { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.ex-body[hidden] { display: none; }
 .ex-note { margin: 0; font-size: 13px; color: var(--muted); }
 .ex-note--last { color: var(--accent); }
 
