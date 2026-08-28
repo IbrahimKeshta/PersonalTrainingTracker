@@ -181,6 +181,23 @@
       window.location.hash = '#/day/' + day.id;
     }
 
+    // --- countdown beep -----------------------------------------------
+    // Lazily created on the first Start click (a user gesture), since
+    // browsers block audio contexts from running without one.
+    var audioCtx = null;
+
+    function beep() {
+      if (!audioCtx) return;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.value = 0.15;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    }
+
     // --- countdown widget -------------------------------------------------
     function countdown(seconds, label, onDone) {
       var remaining = seconds;
@@ -192,6 +209,7 @@
       function tick() {
         remaining--;
         display.textContent = UI.fmtClock(Math.max(0, remaining));
+        if (remaining > 0 && remaining <= 3) beep();
         if (remaining <= 0) {
           stopTimer();
           running = false;
@@ -203,6 +221,9 @@
 
       startBtn.addEventListener('click', function () {
         if (running) { stopTimer(); running = false; startBtn.textContent = 'Resume'; return; }
+        if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
         running = true;
         startBtn.textContent = 'Pause';
         stopTimer();
